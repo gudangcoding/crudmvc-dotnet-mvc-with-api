@@ -1,0 +1,99 @@
+﻿1. Buat proyek dengan template mvc
+2. buat model produk
+3. setting koneksi di appsettings.json
+ "ConnectionStrings": {
+    "DefaultConnection": "Server=USER\\SQLEXPRESS;Database=tes1;Integrated Security=true;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True"
+  },
+4. buat kontroller baru untuk mvc dengan cara klik kanan folder controller pilih add, lalu scaffold,kemudian mvc kemudian controller lanjut controller with view
+5. buat kontroller baru untuk api dengan cara buat folder api didalam foler controller,klik kanan folder api lalu controller pilih add lalu controller,kemudian api kemudian controller lanjut api controller with action
+6. buat dokumentasi pada api dengan swagger
+    1. install denpendency
+        dotnet add package Swashbuckle.AspNetCore
+    2. tambahkan kode ini pada program.cs bagian paling atas
+        using Microsoft.OpenApi.Models;
+        using Microsoft.Extensions.DependencyInjection;
+        using Microsoft.AspNetCore.Builder;
+        using Microsoft.AspNetCore.Hosting;
+    3.lalu siap digunakan
+        var builder = WebApplication.CreateBuilder(args);
+
+        // ...
+
+        builder.Services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("v1", new OpenApiInfo
+            {
+                Title = "Your API Title",
+                Version = "v1",
+                Description = "Your API Description"
+            });
+        });
+
+        var app = builder.Build();
+
+        // ...
+
+        app.UseSwagger();
+        app.UseSwaggerUI(c =>
+        {
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "Your API Title V1");
+            c.RoutePrefix = "swagger";
+        });
+
+        // ...
+
+        app.Run();
+
+    4. pastikan menambahkan kode ini pada setiap controller
+
+        [ApiController]
+        [Produces("application/json")]
+
+    5. akses swaggernya di alamat
+        https://localhost:5001/swagger
+
+7. buat autorisasi pada api
+    1. install denpendency nya
+       dotnet add package Microsoft.AspNetCore.Authentication.JwtBearer
+    2.tambahkan kode pada program.cs
+        using Microsoft.AspNetCore.Authentication.JwtBearer;
+        using Microsoft.IdentityModel.Tokens;
+        using System.Text;
+
+        // ...
+
+        services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = "your-issuer", // Ganti dengan issuer yang sesuai
+                ValidAudience = "your-audience", // Ganti dengan audience yang sesuai
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("your-secret-key")) // Ganti dengan secret key yang sesuai
+            };
+        });
+
+        // ...
+
+        app.UseAuthentication();
+        app.UseAuthorization();
+
+        app.Run();
+
+    3. tambahkan kode ini pada setiap controller yang akan di autentikasi
+        [Authorize] //tambahkan ini
+        [ApiController]
+        [Produces("application/json")]
+        [Route("api/[controller]")]
+        public class YourApiController : ControllerBase
+        {
+            // ...
+        }
